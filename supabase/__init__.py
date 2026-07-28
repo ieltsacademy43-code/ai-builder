@@ -1,0 +1,1 @@
+"""Supabase package for AI Builder."""

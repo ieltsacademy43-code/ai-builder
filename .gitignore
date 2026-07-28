@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+
+# Backups
+.backups/
+
+# Memory data
+memory/data/
+
+# Logs
+logs/
+
+# Generated docs (can be regenerated)
+docs/modules/
+docs/api_reference.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

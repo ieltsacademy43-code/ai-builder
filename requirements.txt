@@ -1,0 +1,3 @@
+# AI Builder - Phase 1 Dependencies
+# Only external packages needed (Python stdlib modules are built-in)
+requests>=2.31.0
