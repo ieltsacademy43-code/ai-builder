@@ -24,6 +24,13 @@ from tools.bug_fixer import BugFixer
 from tools.doc_generator import DocGenerator
 from plugins.plugin_manager import PluginManager
 from ai_agents.agent_creator import AgentCreator
+from core.reasoning_engine import get_reasoning_engine
+from core.verification_system import get_verification_system
+from core.autonomous_engine import get_autonomous_engine
+from core.improvement_engine import get_improvement_engine
+from ai_agents.dev_agent import DevelopmentAgent
+from ai_agents.conversation_manager import get_conversation_manager
+from llm.llm_manager import get_llm_manager
 
 log = get_logger("core")
 
@@ -55,6 +62,13 @@ class AIBuilderEngine:
         self.supabase = SupabaseClient()
         self.plugins = PluginManager()
         self.agent_creator = AgentCreator()
+        self.llm = get_llm_manager()
+        self.reasoning = get_reasoning_engine()
+        self.verification = get_verification_system()
+        self.autonomous = get_autonomous_engine()
+        self.improvement = get_improvement_engine()
+        self.conversation = get_conversation_manager()
+        self.dev_agent = DevelopmentAgent()
 
         self._initialized = False
 
@@ -75,6 +89,9 @@ class AIBuilderEngine:
                 "bug_fixer", "doc_generator", "task_planner",
                 "progress_tracker", "terminal", "git",
                 "github", "supabase", "plugins", "agent_creator",
+                "llm_manager", "reasoning_engine", "conversation_manager",
+                "dev_agent", "autonomous_engine", "verification_system",
+                "improvement_engine",
             ],
         })
 
@@ -155,6 +172,40 @@ class AIBuilderEngine:
         """List all loaded plugins."""
         return self.plugins.list_plugins()
 
+    def reason(self, task_description, context=None):
+        """Decompose a task into subtasks with dependencies and execution order."""
+        return self.reasoning.reason(task_description, context=context)
+
+    def generate_code(self, task, context=None, file_path=None, language="python"):
+        """Generate code using LLM or rule-based fallback."""
+        return self.dev_agent.generate_code(task, context, file_path, language)
+
+    def execute_development_task(self, task_description, project_path=None, context=None):
+        """Execute a full development task: analyze → identify → generate → edit → review."""
+        return self.dev_agent.execute_task(task_description, project_path=project_path, context=context)
+
+    def verify_project(self, project_path, run_tests=True):
+        """Verify a project for syntax, runtime, and test errors."""
+        return self.verification.verify_project(project_path, run_tests=run_tests)
+
+    def run_autonomous_goal(self, goal, project_path=None, max_retries=3):
+        """Set a goal and autonomously execute it."""
+        plan = self.autonomous.set_goal(goal, project_path=project_path)
+        return self.autonomous.execute_plan(plan["plan_id"], max_retries=max_retries,
+                                             project_path=project_path)
+
+    def analyze_weaknesses(self, project_path):
+        """Analyze project weaknesses and suggest improvements."""
+        return self.improvement.analyze_weaknesses(project_path)
+
+    def suggest_improvements(self, project_path):
+        """Generate improvement suggestions for a project."""
+        return self.improvement.suggest_improvements(project_path)
+
+    def get_llm_status(self):
+        """Return LLM manager status."""
+        return self.llm.status()
+
     def get_status(self):
         """Return the overall engine status."""
         return {
@@ -164,6 +215,7 @@ class AIBuilderEngine:
             "agents": self.list_agents(),
             "plugins": self.list_plugins(),
             "memory_namespaces": self.memory.list_namespaces(),
+            "llm": self.llm.status() if hasattr(self, "llm") else None,
         }
 
     def shutdown(self):

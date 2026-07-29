@@ -38,6 +38,34 @@ DEFAULT_CONFIG = {
         "model": "",
         "base_url": "",
     },
+    "llm": {
+        "preferred": "openai,claude,gemini",
+        "openai": {
+            "api_key": "",
+            "model": "gpt-4o",
+            "base_url": "https://api.openai.com/v1",
+        },
+        "claude": {
+            "api_key": "",
+            "model": "claude-sonnet-4-20250514",
+            "base_url": "https://api.anthropic.com/v1",
+        },
+        "gemini": {
+            "api_key": "",
+            "model": "gemini-1.5-pro",
+            "base_url": "https://generativelanguage.googleapis.com/v1beta",
+        },
+    },
+    "autonomous": {
+        "max_retries": 3,
+        "timeout": 300,
+        "auto_verify": True,
+    },
+    "verification": {
+        "auto_repair": True,
+        "run_tests_after_edit": True,
+        "max_repair_attempts": 3,
+    },
     "created_at": None,
     "updated_at": None,
 }
@@ -123,6 +151,13 @@ class Config:
             "AIBUILDER_SUPABASE_SERVICE_KEY": "supabase.service_key",
             "AIBUILDER_AI_API_KEY": "ai.api_key",
             "AIBUILDER_AI_MODEL": "ai.model",
+            "AIBUILDER_LLM_OPENAI_API_KEY": "llm.openai.api_key",
+            "AIBUILDER_LLM_OPENAI_MODEL": "llm.openai.model",
+            "AIBUILDER_LLM_CLAUDE_API_KEY": "llm.claude.api_key",
+            "AIBUILDER_LLM_CLAUDE_MODEL": "llm.claude.model",
+            "AIBUILDER_LLM_GEMINI_API_KEY": "llm.gemini.api_key",
+            "AIBUILDER_LLM_GEMINI_MODEL": "llm.gemini.model",
+            "AIBUILDER_LLM_PREFERRED": "llm.preferred",
             "AIBUILDER_ENVIRONMENT": "environment",
         }
         for env_var, config_key in env_map.items():

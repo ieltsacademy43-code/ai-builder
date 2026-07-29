@@ -59,6 +59,13 @@ Available Commands:
   status              Show engine status
   memory              Show memory namespaces
   plan <path>         Analyze and create a task plan
+  reason <task>       Decompose a task into subtasks
+  llm                 Show LLM provider status
+  generate <task>     Generate code for a task
+  dev <task> [path]   Execute a development task
+  goal <description>  Run an autonomous goal
+  verify <path>       Verify a project
+  improve <path>      Analyze weaknesses and suggest improvements
   help                Show this help
   exit                Quit
 
@@ -279,6 +286,126 @@ def cmd_plan(engine, args):
             print(f"     {task['description']}")
 
 
+def cmd_reason(engine, args):
+    if not args:
+        print("Usage: reason <task description>")
+        return
+    task = " ".join(args)
+    print(f"\nReasoning about: {task}\n")
+    plan = engine.reason(task)
+    print(engine.reasoning.get_summary(plan))
+    print(f"\nSubtasks: {plan['subtask_count']}")
+    print(f"Dependencies: {sum(len(d) for d in plan['dependencies'].values())}")
+
+
+def cmd_llm(engine, args):
+    status = engine.get_llm_status()
+    print(f"\nLLM Manager Status:")
+    print(f"  Total providers: {status['total_providers']}")
+    print(f"  Preferred order: {status['preferred_order']}")
+    print(f"  Available: {', '.join(status['available']) if status['available'] else 'none'}")
+    if status['best']:
+        print(f"  Best provider: {status['best']}")
+    print(f"\nProviders:")
+    for name, info in status['providers'].items():
+        avail = "READY" if info['available'] else "NO API KEY"
+        print(f"  - {info['display_name']} ({name}): {info['model']} [{avail}]")
+
+
+def cmd_generate(engine, args):
+    if not args:
+        print("Usage: generate <task description>")
+        return
+    task = " ".join(args)
+    print(f"\nGenerating code for: {task}\n")
+    result = engine.generate_code(task)
+    if result.get("success"):
+        print(f"Source: {result.get('source', 'unknown')}")
+        if result.get("provider"):
+            print(f"Provider: {result['provider']} ({result.get('model', '')})")
+        print(f"\n--- Generated Code ---\n")
+        print(result["code"])
+        print(f"\n--- End ({len(result['code'])} chars) ---")
+    else:
+        print(f"Generation failed: {result.get('error', 'unknown')}")
+
+
+def cmd_dev(engine, args):
+    if not args:
+        print("Usage: dev <task description> [project_path]")
+        return
+    task = args[0]
+    project_path = args[1] if len(args) > 1 else str(Path.cwd())
+    print(f"\nExecuting development task: {task}")
+    print(f"Project: {project_path}\n")
+    result = engine.execute_development_task(task, project_path=project_path)
+    print(f"Files changed: {result['files_changed']}")
+    for change in result.get("changes", []):
+        print(f"\n  File: {change['file_path']}")
+        print(f"  Type: {change['change_type']}")
+        print(f"  Verified: {change['verified']}")
+        if change.get("explanation"):
+            print(f"  Explanation: {change['explanation'][:200]}")
+    print(f"\nCompleted at: {result['completed_at']}")
+
+
+def cmd_goal(engine, args):
+    if not args:
+        print("Usage: goal <goal description>")
+        return
+    goal = " ".join(args)
+    project_path = str(Path.cwd())
+    print(f"\nSetting autonomous goal: {goal}")
+    print(f"Project: {project_path}\n")
+    report = engine.run_autonomous_goal(goal, project_path=project_path)
+    print(engine.autonomous.render_report(report))
+    print(f"\nTask Results:")
+    for tr in report.get("task_results", []):
+        status_icon = {"completed": "OK", "failed": "FAIL", "skipped": "SKIP"}.get(tr["status"], "?")
+        print(f"  [{status_icon}] {tr['title']} (attempts: {tr['attempts']})")
+
+
+def cmd_verify(engine, args):
+    path = args[0] if args else str(Path.cwd())
+    print(f"\nVerifying: {path}\n")
+    result = engine.verify_project(path, run_tests=True)
+    print(f"Files checked: {result['files_checked']}")
+    print(f"Files passed: {result['files_passed']}")
+    print(f"Files failed: {result['files_failed']}")
+    print(f"Syntax errors: {result['syntax_errors']}")
+    print(f"Runtime errors: {result['runtime_errors']}")
+    print(f"Total bugs: {result['total_bugs']}")
+    if result.get("test_results"):
+        tr = result["test_results"]
+        print(f"\nTest Results:")
+        print(f"  Passed: {tr.get('tests_passed', 0)}")
+        print(f"  Failed: {tr.get('tests_failed', 0)}")
+        print(f"  Duration: {tr.get('duration', 0)}s")
+
+
+def cmd_improve(engine, args):
+    path = args[0] if args else str(Path.cwd())
+    print(f"\nAnalyzing weaknesses: {path}\n")
+    weaknesses = engine.analyze_weaknesses(path)
+    print(f"Total weaknesses: {weaknesses['total_weaknesses']}")
+    print(f"By severity: {weaknesses['by_severity']}")
+    print(f"By category: {weaknesses['by_category']}")
+    print(f"\nTop weaknesses:")
+    for i, w in enumerate(weaknesses["weaknesses"][:5], 1):
+        print(f"  {i}. [{w['severity']}] {w['title']}")
+        if w.get("suggestion"):
+            print(f"     -> {w['suggestion']}")
+
+    print(f"\nSuggesting improvements...")
+    improvements = engine.suggest_improvements(path)
+    print(f"Total improvements: {improvements['total_improvements']}")
+    print(f"By priority: {improvements['by_priority']}")
+    print(f"\nTop improvements:")
+    for i, imp in enumerate(improvements["improvements"][:5], 1):
+        print(f"  {i}. [{imp['priority']}] {imp['title']}")
+        print(f"     Effort: {imp['effort']}, Impact: {imp['impact']}")
+
+
 COMMANDS = {
     "analyze": cmd_analyze,
     "read": cmd_read,
@@ -293,6 +420,13 @@ COMMANDS = {
     "status": cmd_status,
     "memory": cmd_memory,
     "plan": cmd_plan,
+    "reason": cmd_reason,
+    "llm": cmd_llm,
+    "generate": cmd_generate,
+    "dev": cmd_dev,
+    "goal": cmd_goal,
+    "verify": cmd_verify,
+    "improve": cmd_improve,
     "help": lambda e, a: print(HELP_TEXT),
 }
 
