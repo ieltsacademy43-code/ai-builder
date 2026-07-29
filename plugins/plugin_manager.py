@@ -56,7 +56,7 @@ class PluginManager:
         """Find all Python files in the plugins directory."""
         plugin_files = []
         for py_file in self.plugins_dir.glob("*.py"):
-            if py_file.name.startswith("_") or py_file.name == "__init__.py":
+            if py_file.name.startswith("_") or py_file.name in ("__init__.py", "plugin_manager.py"):
                 continue
             plugin_files.append(str(py_file))
         return plugin_files
@@ -180,13 +180,13 @@ log = get_logger("plugins")
 class {class_name}(Plugin):
     """Plugin: {name} - {description}"""
 
-    name = "{name}"
+    name = {repr(name)}
     version = "1.0.0"
-    description = "{description}"
+    description = {repr(description)}
 
     def execute(self, *args, **kwargs):
         """Execute the plugin logic."""
-        log.info(f"[{self.name}] Executing with args={{args}}, kwargs={{kwargs}}")
+        log.info(f"[{{self.name}}] Executing with args={{args}}, kwargs={{kwargs}}")
         return {{
             "plugin": self.name,
             "status": "executed",

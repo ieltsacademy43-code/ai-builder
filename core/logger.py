@@ -44,8 +44,11 @@ class Logger:
         console_fmt = logging.Formatter("%(levelname)-8s | %(message)s")
         console_handler.setFormatter(console_fmt)
 
-        self.logger.addHandler(file_handler)
-        self.logger.addHandler(console_handler)
+        # Add handlers to root logger so ALL named loggers inherit them
+        root = logging.getLogger()
+        root.setLevel(level)
+        root.addHandler(file_handler)
+        root.addHandler(console_handler)
 
     def debug(self, msg, extra=None):
         self.logger.debug(msg, extra=extra)

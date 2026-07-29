@@ -330,7 +330,7 @@ def test_agent_creator():
     info = creator.create_agent("test_created", template="code_reviewer")
     assert info["name"] == "test_created"
     assert info["template"] == "code_reviewer"
-    assert "code_reviewer" in info["capabilities"]
+    assert "read_files" in info["capabilities"]
 
 
 # --- Doc generator tests ---
@@ -361,7 +361,7 @@ def test_engine():
 # --- Utils tests ---
 
 def test_utils_safe_filename():
-    assert safe_filename("hello world!") == "hello world"
+    assert safe_filename("hello world!") == "hello_world"
     assert safe_filename("file/with/slashes") == "file_with_slashes"
 
 

@@ -30,8 +30,10 @@ class MemoryStore:
             try:
                 with open(self.index_file, "r", encoding="utf-8") as f:
                     self._index = json.load(f)
+                if "entries" not in self._index:
+                    self._index = {"entries": {}, "created_at": datetime.now().isoformat()}
             except (json.JSONDecodeError, IOError):
-                self._index = {}
+                self._index = {"entries": {}, "created_at": datetime.now().isoformat()}
         else:
             self._index = {"entries": {}, "created_at": datetime.now().isoformat()}
 

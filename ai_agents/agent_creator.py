@@ -168,9 +168,9 @@ class {class_name}(BaseAgent):
 
     def __init__(self):
         super().__init__(
-            name="{name}",
-            role="{template}",
-            description="{description}",
+            name={repr(name)},
+            role={repr(template)},
+            description={repr(description)},
             capabilities=[{caps_str}],
         )
         self.agent_config = {repr(config)}
