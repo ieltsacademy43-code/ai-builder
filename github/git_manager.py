@@ -238,3 +238,105 @@ class GitManager:
         """Pop stashed changes."""
         return self.terminal.run("git stash pop", cwd=path or self.repo_path,
                                   check_dangerous=False, timeout=10)
+
+    def clone(self, url, path=None, branch=None, depth=None):
+        """Clone a remote repository.
+
+        url: Remote repository URL.
+        path: Destination directory (default: repo name from URL).
+        branch: Clone a specific branch.
+        depth: Shallow clone depth (e.g. 1 for last commit only).
+        """
+        cmd = "git clone"
+        if branch:
+            cmd += f" --branch {branch}"
+        if depth:
+            cmd += f" --depth {depth}"
+        cmd += f" {url}"
+        if path:
+            cmd += f" {path}"
+
+        result = self.terminal.run(cmd, check_dangerous=False, timeout=120)
+        if result["success"]:
+            log.info(f"Cloned {url} -> {path or '.'}")
+        return result
+
+    def fetch(self, remote="origin", branch=None, path=None):
+        """Fetch changes from a remote without merging."""
+        cmd = f"git fetch {remote}"
+        if branch:
+            cmd += f" {branch}"
+        result = self.terminal.run(cmd, cwd=path or self.repo_path,
+                                   check_dangerous=False, timeout=120)
+        return result
+
+    def tag(self, name, message=None, path=None, annotated=True):
+        """Create a tag. If annotated=True (default), creates an annotated tag."""
+        if not name:
+            return {"success": False, "stderr": "Tag name is required."}
+        cmd = "git tag"
+        if annotated:
+            if message:
+                cmd += f" -a {name} -m {repr(message)}"
+            else:
+                cmd += f" -a {name}"
+        else:
+            cmd += f" {name}"
+        result = self.terminal.run(cmd, cwd=path or self.repo_path,
+                                   check_dangerous=False, timeout=10)
+        if result["success"]:
+            log.info(f"Created tag {name}")
+        return result
+
+    def reset(self, target, mode="--mixed", path=None):
+        """Reset the current HEAD to a target (commit hash, branch, or tag).
+
+        mode: '--soft' (keep changes staged), '--mixed' (default, unstage),
+              '--hard' (discard all changes — use with caution).
+        """
+        cmd = f"git reset {mode} {target}"
+        is_hard = mode == "--hard"
+        result = self.terminal.run(
+            cmd,
+            cwd=path or self.repo_path,
+            check_dangerous=False,
+            timeout=15,
+        )
+        if is_hard:
+            log.warning(f"Hard reset to {target} — all uncommitted changes discarded.")
+        return result
+
+    def log_detailed(self, count=10, path=None):
+        """Get a detailed commit log with author, date, and files changed."""
+        fmt = "--pretty=format:%H|%an|%ad|%s"
+        result = self.terminal.run(
+            f"git log {fmt} --date=short -{count} --name-only",
+            cwd=path or self.repo_path,
+            check_dangerous=False,
+            timeout=10,
+        )
+        if not result["success"]:
+            return []
+
+        commits = []
+        current = None
+        for line in result["stdout"].splitlines():
+            line = line.rstrip()
+            if not line:
+                continue
+            if "|" in line and line.count("|") >= 3:
+                parts = line.split("|", 3)
+                if current:
+                    commits.append(current)
+                current = {
+                    "hash": parts[0],
+                    "author": parts[1],
+                    "date": parts[2],
+                    "message": parts[3],
+                    "files_changed": [],
+                }
+            elif current:
+                current["files_changed"].append(line)
+        if current:
+            commits.append(current)
+        return commits
