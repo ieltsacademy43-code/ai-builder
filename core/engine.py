@@ -30,6 +30,7 @@ from core.autonomous_engine import get_autonomous_engine
 from core.improvement_engine import get_improvement_engine
 from ai_agents.dev_agent import DevelopmentAgent
 from ai_agents.conversation_manager import get_conversation_manager
+from ai_agents.human_interaction import get_human_interaction_engine
 from llm.llm_manager import get_llm_manager
 
 log = get_logger("core")
@@ -69,6 +70,7 @@ class AIBuilderEngine:
         self.improvement = get_improvement_engine()
         self.conversation = get_conversation_manager()
         self.dev_agent = DevelopmentAgent()
+        self.interaction = get_human_interaction_engine()
 
         self._initialized = False
 
@@ -91,7 +93,7 @@ class AIBuilderEngine:
                 "github", "supabase", "plugins", "agent_creator",
                 "llm_manager", "reasoning_engine", "conversation_manager",
                 "dev_agent", "autonomous_engine", "verification_system",
-                "improvement_engine",
+                "improvement_engine", "human_interaction_engine",
             ],
         })
 
@@ -206,6 +208,15 @@ class AIBuilderEngine:
         """Return LLM manager status."""
         return self.llm.status()
 
+    def chat(self, message, conversation_id=None):
+        """Converse with the assistant via the Human Interaction Layer.
+
+        Returns an InteractionResult dict (response, intent, emotion, tone,
+        strategy, followup, conversation_id).
+        """
+        result = self.interaction.respond(message, conversation_id=conversation_id)
+        return result.to_dict()
+
     def get_status(self):
         """Return the overall engine status."""
         return {
@@ -216,6 +227,7 @@ class AIBuilderEngine:
             "plugins": self.list_plugins(),
             "memory_namespaces": self.memory.list_namespaces(),
             "llm": self.llm.status() if hasattr(self, "llm") else None,
+            "interaction": self.interaction.status(),
         }
 
     def shutdown(self):
